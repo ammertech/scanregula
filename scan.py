@@ -1,4 +1,3 @@
-```python
 import ctypes
 from ctypes import c_uint32, c_int, POINTER, byref
 import os
