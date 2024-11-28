@@ -1,11 +1,12 @@
+```python
 import ctypes
 from ctypes import c_uint32, c_int, POINTER, byref
 import time
 
-# Pfad zur SDK-Bibliothek
+# Path to SDK library
 LIBRARY_PATH = "/usr/lib/regula/sdk/libPasspR40.so"
 
-# Kommando Konstanten
+# Command Constants
 RPRM_COMMAND_DEVICE_COUNT = 0x01
 RPRM_COMMAND_DEVICE_CONNECT = 0x04
 RPRM_COMMAND_DEVICE_DISCONNECT = 0x06
@@ -14,20 +15,20 @@ RPRM_COMMAND_PROCESS = 0x10
 def load_library(path):
     try:
         lib = ctypes.CDLL(path)
-        print("SDK-Bibliothek erfolgreich geladen.")
+        print("SDK library successfully loaded.")
         return lib
     except OSError as e:
-        raise RuntimeError(f"Fehler beim Laden der SDK-Bibliothek: {e}")
+        raise RuntimeError(f"Error loading SDK library: {e}")
 
 def initialize_sdk(lib):
     try:
         init_func = lib._Initialize
         init_func.restype = c_int
         result = init_func()
-        print(f"Initialize Ergebnis: {result}")
+        print(f"Initialize result: {result}")
         return result == 0
     except Exception as e:
-        print(f"Fehler bei der SDK-Initialisierung: {e}")
+        print(f"Error initializing SDK: {e}")
         return False
 
 def execute_command(lib, command, in_param=None, out_param=None):
@@ -40,65 +41,66 @@ def execute_command(lib, command, in_param=None, out_param=None):
         out_param_value = c_int(0) if out_param is None else out_param
         
         result = cmd_func(command, in_param_value, byref(out_param_value))
-        print(f"Befehl 0x{command:02X} Ergebnis: {result}")
+        print(f"Command 0x{command:02X} result: {result}")
         
         if result == 0:
             return out_param_value.value
         return None
     except Exception as e:
-        print(f"Fehler beim Ausführen des Befehls: {e}")
+        print(f"Error executing command: {e}")
         return None
 
 def start_scan(lib):
     try:
-        print("\nStarte Scan-Vorgang...")
+        print("\nStarting scan process...")
         result = execute_command(lib, RPRM_COMMAND_PROCESS)
         if result is not None:
-            print("Scan-Befehl erfolgreich gesendet.")
+            print("Scan command successfully sent.")
             return True
         return False
     except Exception as e:
-        print(f"Fehler beim Scannen: {e}")
+        print(f"Error during scanning: {e}")
         return False
 
 def main():
     try:
-        # SDK laden
+        # Load SDK
         lib = ctypes.CDLL(LIBRARY_PATH)
-        print("SDK-Bibliothek erfolgreich geladen.")
+        print("SDK library successfully loaded.")
         
-        # SDK initialisieren
+        # Initialize SDK
         if not initialize_sdk(lib):
             return
         
-        # Geräte zählen
+        # Count devices
         count = execute_command(lib, RPRM_COMMAND_DEVICE_COUNT)
-        print(f"Gefundene Geräte: {count if count is not None else 0}")
+        print(f"Devices found: {count if count is not None else 0}")
         
         if count and count > 0:
-            # Mit Scanner verbinden
+            # Connect to scanner
             connect_result = execute_command(lib, RPRM_COMMAND_DEVICE_CONNECT, -1)
             if connect_result is not None:
-                print("Scanner verbunden")
+                print("Scanner connected")
                 
-                # Direkt Scan starten
+                # Start scan directly
                 start_scan(lib)
                 
-                # Kurz warten
+                # Short wait
                 time.sleep(2)
                 
-                # Scanner trennen
+                # Disconnect scanner
                 execute_command(lib, RPRM_COMMAND_DEVICE_DISCONNECT)
-                print("Scanner getrennt")
+                print("Scanner disconnected")
         
-        # SDK freigeben
+        # Free SDK
         free_func = lib._Free
         free_func.restype = c_int
         result = free_func()
-        print(f"Free Ergebnis: {result}")
+        print(f"Free result: {result}")
         
     except Exception as e:
-        print(f"Ein Fehler ist aufgetreten: {e}")
+        print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
+```
